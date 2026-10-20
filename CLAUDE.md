@@ -163,10 +163,49 @@ No deixar cap pas per al final — fer-ho tot seguit.
 
 ---
 
+## Roadmap acordat (ordre de sessions futures)
+
+### C — Dades i precisió (PRIMER)
+- Invalidació de caché per versió: quan canvia `forest_zones.geojson`, la caché de 6h pot servir scores antics. Caldria comparar un hash/versió del fitxer amb el que té la caché.
+- Terrain/hillshade: `RasterDemSource` descartada per incompatibilitat. Alternativa: usar un estil base que ja inclogui hillshade (MapTiler Outdoor, etc.).
+- Més espècies de bolets (Cantharellus cibarius, Lactarius deliciosus, etc.)
+- Cluster color per score màxim: `withClusterProperty` falla silenciosament. Alternativa: clustering client-side pre-agrupat.
+
+### B — UX parcial (SEGON)
+- Onboarding per a nous usuaris
+- Mode offline amb dades cacheades
+- Millora del detail sheet de zona
+- Notificacions push (requereix Play Store publicada)
+
+### A — Llançament Play Store (TERCER)
+- App icon (Android Studio Image Asset wizard)
+- Keystore release: `keytool -genkey ...` + `keystore.properties`
+- Firebase Crashlytics: crear projecte, descarregar `google-services.json` a `app/`
+- Captures de pantalla, descripció, content rating, data safety
+- Privacy policy: publicar `docs/privacy-policy.md` en URL pública (GitHub Pages)
+- Compte Google Play Developer ($25 one-time)
+
+### D — Comunitat (QUART, paral·lel a A)
+Spec completa: `docs/superpowers/specs/2026-05-17-community-design.md`
+
+**Stack:** Supabase (hosted) — PostgreSQL + PostGIS + Auth + Storage. L'app parla directament amb Supabase SDK Android, sense API pròpia.
+
+**Auth:** Google Sign-In via Supabase Auth (un tap). Trust ratio per usuari comença a 0.5.
+
+**Taules:** `users` (id, display_name, trust_ratio, confirmation_count, accepted_count) · `confirmations` (id, user_id, lat, lon, species, photo_url?, quantity?, source, created_at) · `corroborations` (confirmation_id, user_id, vote up/down, created_at)
+
+**Trust ratio:** +0.05 per corroboració positiva, −0.08 per negativa. iNaturalist seeds = 1.0.
+
+**Seeding inicial:** script Python one-time (`tools/seed_community/seed_inat.py`) — iNaturalist API, `taxon_id=54791`, `quality_grade=research`, Catalunya. Etiquetat "Observació histórica · Font: iNaturalist". GPS de telèfon (3-15m precisió), llicència CC.
+
+**Offline:** si Supabase cau, l'app funciona normalment (scoring offline intacte). Confirmació sense xarxa → WorkManager reintenta.
+
+**Monetització futura:** freemium one-time (€3-5). Gratuït = mapa + scoring + comunitat bàsica. Premium = notificacions push + historial il·limitat + offline complet. Ads descartats (nínxol massa petit, CPM negligible).
+
+---
+
 ## Pendents coneguts
 
-- **Invalidació de caché per versió de dades**: quan canvia `forest_zones.geojson`, la caché de 6h pot servir scores antics. Caldria comparar un hash/versió del fitxer amb el que té la caché.
-- **Terrain/hillshade**: `RasterDemSource` descartada per incompatibilitat. Alternativa: usar un estil base que ja inclogui hillshade (MapTiler Outdoor, etc.).
-- **Cluster color per score màxim**: `withClusterProperty` falla silenciosament. Alternativa: clustering client-side pre-agrupat.
-- **App icon, Firebase Crashlytics, keystore, Play Store**: tasques de llançament pendents.
 - **Números de cluster en zones amb molt zoom**: `queryRenderedFeatures` retorna els clusters correctament però en casos límit de zoom pot haver-hi desplaçament del label.
+- **Pipeline GeoJSON manual**: descarregar MFE50 (ICGC) + MDT05 (IGN) i executar `tools/build_geojson/build_geojson.py` (pendent de l'usuari)
+- **Provar en dispositiu**: `./gradlew.bat installDebug` amb el GeoJSON generat
